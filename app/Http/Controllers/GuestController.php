@@ -22,24 +22,33 @@ class GuestController extends Controller
     {
         $query = $request->input('search', ''); // Ambil input pencarian
         $settings_events = Setting::all(); // Data setting event
-    
+
         // Validasi input pencarian untuk mencegah eksploitasi
         $request->validate([
             'search' => 'nullable|string|max:255',
         ]);
-    
+
         // Query tamu berdasarkan input pencarian
-        $guests = Guest::when($query, function ($queryBuilder) use ($query) {
+        $guestsQuery = Guest::when($query, function ($queryBuilder) use ($query) {
             $queryBuilder->where('name', 'LIKE', '%' . $query . '%')
-                         ->orWhere('phone_number', 'LIKE', '%' . $query . '%')
-                         ->orWhere('guest_type', 'LIKE', '%' . $query . '%');
-        })->paginate(10);
-    
+                        ->orWhere('phone_number', 'LIKE', '%' . $query . '%')
+                        ->orWhere('guest_type', 'LIKE', '%' . $query . '%');
+        });
+
+        // Handle sorting
+        if ($request->has('sort') && $request->has('direction')) {
+            $guestsQuery->orderBy($request->input('sort'), $request->input('direction'));
+        } else {
+            $guestsQuery->orderBy('name', 'asc'); // Default sorting
+        }
+
+        $guests = $guestsQuery->paginate(10);
+
         // Data statistik tamu
         $totalGuests = Guest::count(); 
         $totalAttended = Guest::where('attended', true)->count(); 
         $totalNotAttended = $totalGuests - $totalAttended;
-    
+
         return view('guests.index', compact(
             'totalGuests',
             'totalAttended',
@@ -48,6 +57,7 @@ class GuestController extends Controller
             'settings_events'
         ));
     }
+
     public function downloadQr($slug)
     {
         $guest = Guest::where('slug', $slug)->firstOrFail();
