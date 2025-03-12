@@ -14,6 +14,7 @@
             </div>
         </div>
     </div>
+    @endforeach
 
     <div class="container mx-auto px-6 pb-20 mt-5">
         <div class="flex justify-between items-center mb-8">
@@ -147,7 +148,6 @@ berkenan untuk hadir dan memberikan doa restu.
 Terima Kasih
 
 Hormat kami,
-{{ $undangan->nama_pasangan }}
 
 *NB:*
 * Mohon tunjukan *QRCode* ini sebagai akses masuk ke acara
@@ -263,5 +263,5 @@ Tipe: ${vipType}
   });
 </script>
 
-@endforeach
+
 @endsection

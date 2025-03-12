@@ -176,6 +176,7 @@
             </div>
         </div>
         <!-- Event End -->
+        @endforeach
 
         <!-- RSVP Start -->
         <div class="container-fluid py-5" id="rsvp">
@@ -412,7 +413,7 @@
 
         <!-- Template Javascript -->
         <script src="js/main.js"></script>
-    @endforeach
+    
 </body>
 
 </html>

@@ -38,6 +38,10 @@
             <button id="printQrButton" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                 Cetak QR Code
             </button>
+            <!-- Tombol untuk mengambil foto -->
+            <button id="takePhotoButton" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                Ambil Foto
+            </button>
         </div>
     </div>
     
@@ -158,6 +162,11 @@
                         // Set href for print QR button
                         document.getElementById('printQrButton').onclick = function() {
                             window.location.href = `/guests/${slug}/print-qr`;
+                        };
+
+                        // Set href for take photo button
+                        document.getElementById('takePhotoButton').onclick = function() {
+                            window.location.href = `/photo/${slug}`;
                         };
                     } else if (response.status === 400) {
                         alert(data.message);
