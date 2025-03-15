@@ -38,6 +38,12 @@ $guestType = Cache::get('last_scanned_guest_type');
                         Seluruh Tamu Undangan Yang Berbahagia
                     @endif
                 </div>
+                @if($guestType == 'VIP')
+                <!-- Card Baru untuk VIP -->
+                <div class="mt-4 p-4 background-color: #9c8200 text-white rounded-lg shadow-lg text-center">
+                    <h3 class="text-lg font-bold">⭐Selamat Datang Tamu VIP⭐</h3>
+                </div>
+                @endif
             </div>
         </div>
     </div>
