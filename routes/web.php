@@ -54,7 +54,8 @@ Route::put('/guests/{slug}/rsvp', [GuestController::class, 'updateRSVP'])->name(
 
 Route::middleware('auth')->group(function () {
     Route::put('/guests/{slug}/update-guest-count', [ScanQRController::class, 'updateGuestCount']);
-    Route::get('/dashboard', [HomeController::class, 'dashboard'])->name('dashboard'); 
+    Route::get('/dashboard', [HomeController::class, 'dashboard'])->name('dashboard');
+    Route::get('/guests/search', [App\Http\Controllers\HomeController::class, 'searchGuests'])->name('guests.search'); 
     Route::get('/rsvp', [HomeController::class, 'rsvp'])->name('rsvp');    
     Route::get('/api/guests', [HomeController::class, 'getGuests']);
     Route::get('/home', [GuestController::class, 'index'])->name('home');
@@ -76,6 +77,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/guests/export/pdf', [GuestController::class, 'exportPDF'])->name('guests.exportPDF');
     // Rute untuk ekspor Excel
     Route::get('/guests/export/excel', [GuestController::class, 'exportExcel'])->name('guests.exportExcel');
+    Route::get('/guests/ajax/search', [App\Http\Controllers\GuestController::class, 'ajaxSearch'])
+    ->name('guests.ajax');
 
     // Route untuk sovenir
     Route::get('guests/souvenir', [SouvenirController::class, 'index'])->name('souvenir.index');

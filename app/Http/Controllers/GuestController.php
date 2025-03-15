@@ -22,6 +22,7 @@ class GuestController extends Controller
     {
         $query = $request->input('search', ''); // Ambil input pencarian
         $settings_events = Setting::all(); // Data setting event
+        $undangan = Undangan::all();
 
         // Validasi input pencarian untuk mencegah eksploitasi
         $request->validate([
@@ -49,13 +50,68 @@ class GuestController extends Controller
         $totalAttended = Guest::where('attended', true)->count(); 
         $totalNotAttended = $totalGuests - $totalAttended;
 
+        // Check if AJAX request
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('guests.partials.guest-table', compact('guests'))->render(),
+                'pagination' => view('guests.partials.pagination', compact('guests'))->render(),
+            ]);
+        }
+
         return view('guests.index', compact(
             'totalGuests',
             'totalAttended',
             'totalNotAttended',
             'guests',
-            'settings_events'
+            'settings_events',
+            'undangan'
         ));
+    }
+
+    /**
+     * AJAX endpoint for guests data
+     */
+    public function ajaxSearch(Request $request)
+    {
+        $query = $request->input('search', '');
+        $sort = $request->input('sort', 'name');
+        $direction = $request->input('direction', 'asc');
+        
+        // Validate sort field to prevent SQL injection
+        $validSortFields = ['name', 'guest_type', 'created_at', 'updated_at', 'attended'];
+        if (!in_array($sort, $validSortFields)) {
+            $sort = 'name';
+        }
+        
+        // Validate direction
+        if (!in_array($direction, ['asc', 'desc'])) {
+            $direction = 'asc';
+        }
+        
+        // Query tamu berdasarkan input pencarian
+        $guestsQuery = Guest::when($query, function ($queryBuilder) use ($query) {
+            $queryBuilder->where('name', 'LIKE', '%' . $query . '%')
+                        ->orWhere('phone_number', 'LIKE', '%' . $query . '%')
+                        ->orWhere('guest_type', 'LIKE', '%' . $query . '%');
+        });
+        
+        // Apply sorting
+        $guestsQuery->orderBy($sort, $direction);
+        
+        // Get paginated results
+        $guests = $guestsQuery->paginate(10);
+        
+        return response()->json([
+            'current_page' => $guests->currentPage(),
+            'data' => $guests->items(),
+            'from' => $guests->firstItem(),
+            'last_page' => $guests->lastPage(),
+            'per_page' => $guests->perPage(),
+            'to' => $guests->lastItem(),
+            'total' => $guests->total(),
+            'prev_page_url' => $guests->previousPageUrl(),
+            'next_page_url' => $guests->nextPageUrl(),
+        ]);
     }
 
     public function downloadQr($slug)
@@ -83,6 +139,7 @@ class GuestController extends Controller
             'Content-Type' => 'image/png',
         ])->deleteFileAfterSend(true); // Hapus file setelah diunduh
     }
+    
     public function showDataTamu(Request $request)
     {
         $query = $request->input('search');
@@ -98,7 +155,7 @@ class GuestController extends Controller
         $totalNumberOfGuests = Guest::whereNotNull('number_of_guests')->sum('number_of_guests'); 
 
         return view('guests.guest', compact('totalGuests', 'totalAttended', 'totalNumberOfGuests', 'guests', 'undangan'));
-}
+    }
 
     // Menampilkan form tambah tamu
     public function create()
@@ -382,5 +439,4 @@ class GuestController extends Controller
             ], 500);
         }
     }
-
 }

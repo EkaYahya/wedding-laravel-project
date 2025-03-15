@@ -4,7 +4,6 @@
 
 @section('content')
 
-
 <div class="bg-primary-light min-h-screen p-6">
 <div class="relative w-full mx-auto py-20">
     <!-- Background Image -->
@@ -112,7 +111,7 @@
             Undangan: {{ $totalGuests }} | Hadir: {{ $totalAttended }} ({{ $totalNumberOfGuests }} Orang)
         </div>
         <div class="m-2">
-            <form id="search-form" action="{{ route('guests.index') }}" method="GET" onsubmit="handleSearch(event)">
+            <form id="search-form" action="{{ route('home') }}" method="GET" onsubmit="handleSearch(event)">
                 <input type="text" id="search-input" name="search" placeholder="Cari tamu..."
                     class="px-4 py-2 border rounded-lg w-full mb-4 focus:ring-2 focus:ring-primary outline-none">
                 <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark">
@@ -126,10 +125,11 @@
                     <th class="py-2 px-4 text-left font-medium">Nama</th>
                     <th class="py-2 px-4 text-left font-medium text-center">Kehadiran</th>
                     <th class="py-2 px-4 text-left font-medium text-center">Jumlah Tamu</th>
+                    <th class="py-2 px-4 text-left font-medium text-center">Waktu Update</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse ($guests as $guest)
+                @forelse ($recentGuests as $guest)
                     <tr class="border-b hover:bg-primary-light/50 transition-colors duration-200">
                         <td class="py-2 px-4 text-primary-dark">{{ $guest->name }}</td>
                         <td class="py-2 px-4 flex justify-center">
@@ -138,14 +138,20 @@
                             </span>
                         </td>
                         <td class="py-2 px-4 text-primary-dark text-center">{{ $guest->number_of_guests ?? '-' }}</td>
+                        <td class="py-2 px-4 text-primary-dark text-center">{{ $guest->updated_at->format('d M Y H:i') }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="3" class="py-2 px-4 text-center text-gray-500">Belum ada tamu yang terdaftar.</td>
+                        <td colspan="4" class="py-2 px-4 text-center text-gray-500">Belum ada tamu yang terdaftar.</td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
+        
+        <!-- Pagination Links -->
+        <div class="px-4 py-3 bg-white border-t border-gray-200">
+            {{ $recentGuests->links() }}
+        </div>
     </div>
 
     <!-- Modal Pop-up -->
@@ -199,8 +205,8 @@
             </div>
             <!-- Body -->
             <div class="p-6">
-                <form id="search-form" action="{{ route('guests.index') }}" method="GET" onsubmit="handleSearch(event)">
-                    <input type="text" id="search-input" name="search" placeholder="Cari tamu..."
+                <form id="search-form-modal" onsubmit="handleSearchModal(event)">
+                    <input type="text" id="search-input-modal" name="search" placeholder="Cari tamu..."
                            class="px-4 py-2 border rounded-lg w-full mb-4 focus:ring-2 focus:ring-primary outline-none">
                     <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark">
                         Cari
@@ -222,15 +228,18 @@
                 </div>
             </div>
             <!-- Footer -->
-            <button id="closeSearchModal" class="w-full flex items-center justify-center bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition">
-                <i class="fa-solid fa-times mr-2"></i> Tutup
-            </button>
+            <div class="p-4 border-t">
+                <button id="closeSearchModal" class="w-full flex items-center justify-center bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition">
+                    <i class="fa-solid fa-times mr-2"></i> Tutup
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
 @endsection
 
+@section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     // Get elements
@@ -251,26 +260,34 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Open search modal
-    triggerSearchModal.addEventListener('click', () => {
-        openModal(searchModal);
-        closeModal(checkInModal); // Ensure other modals are closed
-    });
+    if (triggerSearchModal) {
+        triggerSearchModal.addEventListener('click', () => {
+            openModal(searchModal);
+            closeModal(checkInModal); // Ensure other modals are closed
+        });
+    }
 
     // Close search modal
-    closeSearchModalBtn.addEventListener('click', () => {
-        closeModal(searchModal);
-    });
+    if (closeSearchModalBtn) {
+        closeSearchModalBtn.addEventListener('click', () => {
+            closeModal(searchModal);
+        });
+    }
 
     // Open check-in modal
-    triggerModal.addEventListener('click', () => {
-        openModal(checkInModal);
-        closeModal(searchModal); // Ensure other modals are closed
-    });
+    if (triggerModal) {
+        triggerModal.addEventListener('click', () => {
+            openModal(checkInModal);
+            closeModal(searchModal); // Ensure other modals are closed
+        });
+    }
 
     // Close check-in modal
-    closeModalBtn.addEventListener('click', () => {
-        closeModal(checkInModal);
-    });
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+            closeModal(checkInModal);
+        });
+    }
 
     // Close modals on outside click
     const handleOutsideClick = (modal) => {
@@ -285,4 +302,52 @@ document.addEventListener('DOMContentLoaded', () => {
     handleOutsideClick(checkInModal); // Close check-in modal when clicking outside
 });
 
+// Function to handle search form submission
+function handleSearch(event) {
+    event.preventDefault();
+    const searchInput = document.getElementById('search-input').value;
+    window.location.href = `{{ route('home') }}?search=${encodeURIComponent(searchInput)}`;
+}
+
+// Function to handle modal search form submission with AJAX
+function handleSearchModal(event) {
+    event.preventDefault();
+    const searchInput = document.getElementById('search-input-modal').value;
+    
+    // AJAX search
+    fetch(`{{ route('guests.search') }}?search=${encodeURIComponent(searchInput)}`)
+        .then(response => response.json())
+        .then(data => {
+            const resultsBody = document.getElementById('search-results-body');
+            resultsBody.innerHTML = '';
+            
+            if (data.length > 0) {
+                data.forEach(guest => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b hover:bg-primary-light/50 transition-colors duration-200';
+                    row.innerHTML = `
+                        <td class="py-2 px-4 text-primary-dark">
+                            <a href="{{ url('guests') }}/${guest.id}/edit" class="text-blue-600 hover:underline">
+                                ${guest.name}
+                            </a>
+                        </td>
+                        <td class="py-2 px-4 text-primary-dark">${guest.phone || '-'}</td>
+                    `;
+                    resultsBody.appendChild(row);
+                });
+            } else {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="2" class="py-2 px-4 text-center text-gray-500">
+                        Tidak ada tamu yang ditemukan.
+                    </td>
+                `;
+                resultsBody.appendChild(row);
+            }
+        })
+        .catch(error => {
+            console.error('Error searching for guests:', error);
+        });
+}
 </script>
+@endsection
